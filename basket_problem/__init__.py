@@ -48,10 +48,9 @@ class BasketModel:
         new_apples = self.apples+count
         if new_apples > self.limit:
             raise TooMuchApplesError()
-        else:
-            self.apples = new_apples
-            for receiver in self.receivers_change:
-                receiver(self.apples)
+        self.apples = new_apples
+        for receiver in self.receivers_change:
+            receiver(self.apples)
     
     def is_full(self):
         return self.limit == self.apples
@@ -132,6 +131,7 @@ class ConsoleInputLoop:
             for receiver in self.receivers_input:
                 if not receiver(user_input):
                     return
+
 
 def runMVC(model_fabric, view_fabric, controller_fabric, 
            model_attrs=[], view_attrs=[], controller_attrs=[]):
