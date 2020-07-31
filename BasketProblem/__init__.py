@@ -10,20 +10,25 @@
 '''
 
 class BasketModelError(Exception):
-    def text(self):
+    def get_text(self):
         return ''
 
 class TooMuchApplesError(BasketModelError):
-    def text(self):
+    def get_text(self):
         return 'В корзину не влезет столько яблок.'
 
 class BadCountError(BasketModelError):
-    def text(self):
+    def get_text(self):
         return 'Не может быть столько яблок.'
 
 class BadVariableError(BasketModelError):
-    def text(self):
+    def get_text(self):
         return 'Это не яблоки.'
+
+
+class BasketModelFabric:
+    def create(self, limit):
+        return BasketModel(limit)
 
 
 class BasketModel:
@@ -55,10 +60,16 @@ class BasketModel:
         return self.limit - self.apples
 
 
+class BasketViewFabric:
+    def create(self, model):
+        return BasketView(model) 
+
+
 class BasketView:
     def __init__(self, model):
         self.model = model
         model.receivers_change.append(self.on_model_change)
+        self.receivers_input = []
         
     def __update(self, apples):
         print(f'В корзине {apples} {self.__apples_repr(apples)}.')
@@ -75,26 +86,39 @@ class BasketView:
         elif count%10 in [2,3,4] and count%100 not in [12,13,14]:
             return base_word+'а'
         else:
-            return base_word
-        
+            return base_word        
         
     def on_model_change(self, apples):
         self.__update(apples)
         
-    def init(self):
+    def show(self):
         self.__update(self.model.apples)
+        input_loop = ConsoleInputLoop()
+        input_loop.receivers_input.append(self.on_input_loop)
+        input_loop.start()
+        
+    def on_input_loop(self, user_input):
+        for receiver in self.receivers_input:
+            if not receiver(user_input):
+                return False
+        return True
 
+
+class BasketControllerFabric:
+    def create(self, model, view):
+        return BasketController(model, view)
+    
 
 class BasketController:
-    def __init__(self, model, input_loop):
+    def __init__(self, model, view):
         self.model = model
-        input_loop.receivers_input.append(self.on_input_loop)
+        view.receivers_input.append(self.on_input_loop)
     
     def on_input_loop(self, user_input):
         try:
             self.model.add_apples(user_input)
         except BasketModelError as e:
-            print(e.text())
+            print(e.get_text())
         return not self.model.is_full()
 
 
@@ -108,17 +132,20 @@ class ConsoleInputLoop:
             for receiver in self.receivers_input:
                 if not receiver(user_input):
                     return
+
+def runMVC(model_fabric, view_fabric, controller_fabric, 
+           model_attrs=[], view_attrs=[], controller_attrs=[]):
+    model = model_fabric.create(*model_attrs)
+    view = view_fabric.create(model, *view_attrs)
+    controller_fabric.create(model, view, *controller_attrs)
+    view.show()
                 
                 
-def run(apples_count):   
-    input_loop = ConsoleInputLoop()
-    
-    model = BasketModel(apples_count)
-    view = BasketView(model)
-    view.init()
-    BasketController(model, input_loop)
-    
-    input_loop.start()             
+def run(apples_count): 
+    runMVC(model_fabric=BasketModelFabric(), 
+           view_fabric=BasketViewFabric(), 
+           controller_fabric=BasketControllerFabric(), 
+           model_attrs=[apples_count])    
 
 
 if __name__ == "__main__":
