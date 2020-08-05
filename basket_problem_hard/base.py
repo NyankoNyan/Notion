@@ -1,18 +1,40 @@
+import sys
+chapter = "common"
 
 
-class Node:
+class EmptyNameError(Exception):
+    pass
+
+
+class Notion:
     nodes = []
     search_index = {}
     
     def __init__(self, name=None, chapter=None):
         self.name = name
-        self.chapter = chapter
+        if chapter == None:
+            self.chapter = sys.modules[__name__].chapter
+        else:
+            self.chapter = chapter
         self.components = []
-        self.__reg()
+        self.__reg()        
+        
+    def __str__(self):
+        text = ""
+        if self.name == None:
+            text = "Anonymous notion"
+        else:
+            text = f"Notion {self.name}:{self.chapter}"
+        if len(self.components) > 0:
+            text += "(" + ", ".join([str(c) for c in self.components]) + ")"
+        return text
         
     def __reg(self):        
-        Node.nodes.append(self)
-        Node.search_index[self.get_key()] = self
+        Notion.nodes.append(self)
+        try:
+            Notion.search_index[self.get_key()] = self
+        except EmptyNameError:
+            pass            
         
     def get_key(self):
         return self.pack_key(self.name, self.chapter)
@@ -21,8 +43,10 @@ class Node:
         return [comp for comp in self.components if comp.node.name==name][0]
     
     @staticmethod
-    def pack_key(name, chapter=None):
-        return name + ( "" if chapter is None else ":" + chapter)
+    def pack_key(name, chapter):
+        if name == None or chapter == None:
+            raise EmptyNameError()
+        return name + ":" + chapter
     
     @staticmethod
     def unpack_key(key:str):
@@ -31,10 +55,18 @@ class Node:
     
     @staticmethod
     def find(name=None, chapter=None):
-        return Node.search_index[Node.pack_key(name, chapter)]
+        if chapter == None:
+            chapter = sys.modules[__name__].chapter
+        return Notion.search_index[Notion.pack_key(name, chapter)]
         
 
 class Component:
     def __init__(self, node):
         self.node = node
+    def __str__(self):
+        return str(self.node)
         
+        
+class Derivative:
+    def __init__(self):
+        pass
