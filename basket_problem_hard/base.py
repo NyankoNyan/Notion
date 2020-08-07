@@ -1,9 +1,23 @@
 import sys
-chapter = "common"
 
+chapter = "common"
 
 class EmptyNameError(Exception):
     pass
+
+
+class NotionFabric:
+    @staticmethod
+    def get(name=None, chapter=None):
+        if chapter == None:
+            chapter = sys.modules[__name__].chapter
+        try:
+            return Notion.find(name, chapter)
+        except EmptyNameError:
+            pass
+        except KeyError:
+            pass
+        return Notion(name, chapter)
 
 
 class Notion:
@@ -16,18 +30,18 @@ class Notion:
             self.chapter = sys.modules[__name__].chapter
         else:
             self.chapter = chapter
-        self.components = []
-        self.__reg()        
+        self.__reg()
         
-    def __str__(self):
+    def _str(self):   
         text = ""
         if self.name == None:
             text = "Anonymous notion"
         else:
             text = f"Notion {self.name}:{self.chapter}"
-        if len(self.components) > 0:
-            text += "(" + ", ".join([str(c) for c in self.components]) + ")"
-        return text
+        return text     
+        
+    def __str__(self):
+        return self._str()
         
     def __reg(self):        
         Notion.nodes.append(self)
@@ -38,9 +52,6 @@ class Notion:
         
     def get_key(self):
         return self.pack_key(self.name, self.chapter)
-    
-    def component(self, name):
-        return [comp for comp in self.components if comp.node.name==name][0]
     
     @staticmethod
     def pack_key(name, chapter):

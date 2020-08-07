@@ -10,29 +10,27 @@
 '''
 import basket_problem_hard.base as base
 import basket_problem_hard.proto as proto
-
-
-def create_area():
+import basket_problem_hard.tools as tools
+from basket_problem_hard.base import NotionFabric as nf
+from basket_problem_hard.proto import CollectionFabric as col
+from basket_problem_hard.proto import ComponentFabric as cmp
+from basket_problem_hard.proto import StageFabric as stg
+from basket_problem_hard.proto import InstanceFabric as ins
+    
+    
+def simple_basket():
     base.chapter = "abstract"
-    abstract_basket = base.Notion(name="basket")
-    abstract_basket.components.extend([
-        base.Component(proto.stage()),
-        base.Component(proto.collection(name="apples"))
-        ])
+    a_basket = nf.get("basket")
+    a_apple = nf.get("apple")
+    col_apple = col.get(a_apple)
+    cmp_apple = cmp.get(col_apple, a_basket)
+    stg_basket = stg.get(a_basket)
     
-    abstract_view = base.Notion(name="view")
-    abstract_view.components.extend([
-        base.Component(proto.stage(base.Notion.find(name="basket").component(name="stage"))),
-        base.Component(base.Notion(name="text"))
-        ])
+    base.chapter = "world"
+    w_basket = nf.get("basket")
+    ins.get(w_basket, a_basket)
     
-    base.chapter = "real"
-    
-    real_basket = base.Notion(name="basket")    
-    real_view = base.Notion(name="view")
-    
-    proto.instance(real_basket, abstract_basket)
-    proto.instance(real_view, abstract_view)
+    tools.define_notion_full(w_basket)
     
     
 def print_dump():
@@ -41,5 +39,5 @@ def print_dump():
     
     
 if __name__ == "__main__":
-    create_area()
+    simple_basket()
     print_dump()
